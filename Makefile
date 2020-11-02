@@ -43,11 +43,11 @@ clean:
 	@mkdir -p $(PREFIX)/certs
 
 .conf_file: | .foldertree
-	@cp -a $(PROJECT_DIR)/certs/* $(PREFIX)/certs/
-	@sed 's~<PREFIX>~${PREFIX}~g' $(PROJECT_DIR)/conf/mp.conf.template > $(PREFIX)/etc/mp.conf
+	@cp -a $(PROJECT_DIR)/certs/* $(PREFIX)/certs/ || true
+	@sed 's~<PREFIX>~${PREFIX}~g' $(PROJECT_DIR)/conf/mp.conf.template > $(PREFIX)/etc/mp.conf |true
 
 .html: | .foldertree
-	@cp -a $(PROJECT_DIR)/www/html $(PREFIX)/
+	@cp -a $(PROJECT_DIR)/www/html $(PREFIX)/ || true
 
 ##############################################################################
 # Rule for '$(PROGRAM_NAME)' application
