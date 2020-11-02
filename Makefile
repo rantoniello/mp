@@ -25,7 +25,7 @@ CPPFLAGS = -Wall -O3 -fPIC -I$(INCLUDEDIR) -DPROJECT_DIR=\"$(PROJECT_DIR)\" -DPR
 CPP = c++
 LDLIBS = -lm -ldl
 
-.PHONY: all clean .foldertree .conf_file .html $(PROGRAM_NAME) libutils openssl json-c
+.PHONY: all clean .foldertree .conf_file .html $(PROGRAM_NAME) libutils openssl json-c nasm ffmpeg
 
 all: $(PROGRAM_NAME)
 
@@ -43,11 +43,11 @@ clean:
 	@mkdir -p $(PREFIX)/certs
 
 .conf_file: | .foldertree
-	@cp -a $(PROJECT_DIR)/certs/* $(PREFIX)/certs/
-	@sed 's~<PREFIX>~${PREFIX}~g' $(PROJECT_DIR)/conf/mp.conf.template > $(PREFIX)/etc/mp.conf
+	@cp -a $(PROJECT_DIR)/certs/* $(PREFIX)/certs/ || true
+	@sed 's~<PREFIX>~${PREFIX}~g' $(PROJECT_DIR)/conf/mp.conf.template > $(PREFIX)/etc/mp.conf |true
 
 .html: | .foldertree
-	@cp -a $(PROJECT_DIR)/www/html $(PREFIX)/
+	@cp -a $(PROJECT_DIR)/www/html $(PREFIX)/ || true
 
 ##############################################################################
 # Rule for '$(PROGRAM_NAME)' application
@@ -103,13 +103,13 @@ json-c: | .foldertree
 		cd "$(JSONC_SRCDIRS)" && ./autogen.sh || exit 1; \
 		echo "Configuring $@..."; \
 		cd "$(_BUILD_DIR)" && "$(JSONC_SRCDIRS)"/configure --prefix="$(PREFIX)" --srcdir="$(JSONC_SRCDIRS)" \
-		--enable-static=no || exit 1; \
+--enable-static=no || exit 1; \
 	fi
 	@$(MAKE) -C "$(_BUILD_DIR)" install || exit 1
 
-##############################################################################
-# Rule for 'nasm' library
-##############################################################################
+###############################################################################
+## Rule for 'nasm' library
+###############################################################################
 
 NASM_SRCDIRS = $(PROJECT_DIR)/3rdplibs/nasm
 .ONESHELL:
@@ -118,8 +118,8 @@ nasm: | .foldertree
 	@mkdir -p "$(_BUILD_DIR)"
 	@if [ ! -f "$(_BUILD_DIR)"/Makefile ] ; then \
 		echo "Configuring $@..."; \
-		cd "$(_BUILD_DIR)" && cp -a "$(NASM_SRCDIRS)"/* . && ./autogen.sh && ./configure --prefix="$(PREFIX)" \
-		--srcdir="$(NASM_SRCDIRS)" --disable-pdf-compression || exit 1; \
+		cp -a "$(NASM_SRCDIRS)"/* "$(_BUILD_DIR)"
+		cd "$(_BUILD_DIR)" && ./autogen.sh && ./configure --prefix="$(PREFIX)" || exit 1; \
 	fi
 	@$(MAKE) -C "$(_BUILD_DIR)" install || exit 1
 
@@ -135,8 +135,8 @@ ffmpeg: nasm | .foldertree
 	@if [ ! -f "$(_BUILD_DIR)"/Makefile ] ; then \
 		echo "Configuring $@..."; \
 		cd "$(_BUILD_DIR)" && "$(FFMPEG_SRCDIRS)"/configure --prefix="$(PREFIX)" --disable-static --enable-shared \
-		--enable-gpl --disable-all \
-		--extra-cflags="-I${PREFIX}/include -fopenmp" --extra-ldflags="-L${PREFIX}/lib -fopenmp" || exit 1; \
+--enable-gpl --disable-all --extra-cflags="-I${PREFIX}/include -fopenmp" --extra-ldflags="-L${PREFIX}/lib -fopenmp" \
+|| exit 1; \
 	fi
 	@$(MAKE) -C "$(_BUILD_DIR)" install || exit 1
 
