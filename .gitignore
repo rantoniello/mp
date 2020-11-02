@@ -41,9 +41,10 @@ m4/ltversion.m4
 m4/lt~obsolete.m4
 autom4te.cache
 
-# Compilation specific
+# Compilation specific for this repo
 build
 _install_dir
+3rdplibs/nasm/configure
 
 # Eclipse
 .cproject
