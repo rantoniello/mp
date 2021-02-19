@@ -141,6 +141,23 @@ ffmpeg: nasm | .foldertree
 	@$(MAKE) -C "$(_BUILD_DIR)" install || exit 1
 
 ##############################################################################
+# Rule for 'check' library
+##############################################################################
+
+CHECK_SRCDIRS = $(PROJECT_DIR)/3rdplibs/check
+.ONESHELL:
+check: | .foldertree
+	@$(eval _BUILD_DIR := $(BUILD_DIR)/$@)
+	@mkdir -p "$(_BUILD_DIR)"
+	@if [ ! -f "$(_BUILD_DIR)"/Makefile ] ; then \
+		echo "Configuring $@..."; \
+		cd "$(CHECK_SRCDIRS)" && autoreconf --install || exit 1; \
+		cd "$(_BUILD_DIR)" && "$(CHECK_SRCDIRS)"/configure --prefix="$(PREFIX)" --enable-static=no \
+--enable-build-docs=no || exit 1; \
+	fi
+	@$(MAKE) -C "$(_BUILD_DIR)" install || exit 1
+
+##############################################################################
 # Generic rules to compile and install any library or app. from source
 ############################################################################## 
 # Implementation note: 

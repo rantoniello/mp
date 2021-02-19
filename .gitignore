@@ -24,6 +24,21 @@ Makefile.in
 /missing
 /stamp-h1
 
+# Library "check" (quite redundant... )
+
+3rdplibs/check/ar-lib
+3rdplibs/check/compile
+3rdplibs/check/config.guess
+3rdplibs/check/config.h.in
+3rdplibs/check/config.sub
+3rdplibs/check/depcomp
+3rdplibs/check/doc/mdate-sh
+3rdplibs/check/doc/texinfo.tex
+3rdplibs/check/install-sh
+3rdplibs/check/ltmain.sh
+3rdplibs/check/missing
+3rdplibs/check/test-driver
+
 # https://www.gnu.org/software/libtool/
 
 /ltmain.sh
