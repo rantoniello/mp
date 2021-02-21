@@ -25,7 +25,7 @@ CPPFLAGS = -Wall -O3 -fPIC -I$(INCLUDEDIR) -DPROJECT_DIR=\"$(PROJECT_DIR)\" -DPR
 CPP = c++
 LDLIBS = -lm -ldl
 
-.PHONY: all clean .foldertree .conf_file .html $(PROGRAM_NAME) libutils openssl json-c nasm ffmpeg
+.PHONY: all clean .foldertree .conf_file .html $(PROGRAM_NAME) libmputils openssl json-c nasm ffmpeg
 
 all: $(PROGRAM_NAME)
 
@@ -53,26 +53,32 @@ clean:
 # Rule for '$(PROGRAM_NAME)' application
 ##############################################################################
 
-$(PROGRAM_NAME): .conf_file .html json-c openssl libutils ffmpeg
+$(PROGRAM_NAME): .conf_file .html json-c openssl ffmpeg libmputils
 	@$(MAKE) $(PROGRAM_NAME)-generic-build-install --no-print-directory \
 SRCDIRS=$(PROJECT_DIR)/src _BUILD_DIR=$(BUILD_DIR)/$@ TARGETFILE=$(BUILD_DIR)/$@/$@.bin \
 CXXFLAGS='$(CPPFLAGS) -std=c++11' CFLAGS='$(CPPFLAGS)' \
-LDFLAGS+='-L$(LIBDIR)' LDLIBS+='-lpthread -lutils -lssl -lcrypto -ljson-c'
+LDFLAGS+='-L$(LIBDIR)' LDLIBS+='-lpthread -lssl -lcrypto -ljson-c -lmputils' || exit 1
 
 ##############################################################################
 # Rule for 'utils' library
 ##############################################################################
 
-LIBUTILS_CPPFLAGS = $(CPPFLAGS) -Bdynamic -shared -I$(PROJECT_DIR)/libs
+LIBUTILS_CPPFLAGS = $(CPPFLAGS) -Bdynamic -shared
 LIBUTILS_CFLAGS = $(LIBUTILS_CPPFLAGS)
 LIBUTILS_CXXFLAGS = $(LIBUTILS_CPPFLAGS) -std=c++11
-LIBUTILS_SRCDIRS = $(PROJECT_DIR)/src/libs/utils
-LIBUTILS_HDRFILES = $(wildcard $(PROJECT_DIR)/src/libs/utils/*.h)
+LIBUTILS_SRCDIRS = $(PROJECT_DIR)/src/libs/mputils
+LIBUTILS_HDRFILES = $(wildcard $(PROJECT_DIR)/src/libs/mputils/*.h)
 
-libutils: | .foldertree
-	@$(MAKE) libutils-generic-build-install --no-print-directory \
+libmputils: | .foldertree
+	@$(MAKE) mputils-generic-build-install --no-print-directory \
 SRCDIRS='$(LIBUTILS_SRCDIRS)' _BUILD_DIR='$(BUILD_DIR)/$@' TARGETFILE='$(BUILD_DIR)/$@/$@.so' \
 INCLUDEFILES='$(LIBUTILS_HDRFILES)' CFLAGS='$(LIBUTILS_CFLAGS)' CXXFLAGS='$(LIBUTILS_CXXFLAGS)' || exit 1
+
+libmputils_tests: libmputils | .foldertree
+	@$(MAKE) mputils_tests-generic-build-install --no-print-directory \
+SRCDIRS='$(LIBUTILS_SRCDIRS)'/tests _BUILD_DIR='$(BUILD_DIR)/$@' TARGETFILE='$(BUILD_DIR)/$@/$@.bin' \
+CXXFLAGS='$(CPPFLAGS) -std=c++11' CFLAGS='$(CPPFLAGS)' \
+LDFLAGS+='-L$(LIBDIR)' LDLIBS+='-lpthread -lssl -lcrypto -ljson-c -lmputils -lcheck' || exit 1
 
 ##############################################################################
 # Rule for 'OpenSSL' library and apps.
