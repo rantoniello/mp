@@ -18,15 +18,41 @@
  */
 
 /**
- * @file mp_log_tests.h
+ * @file mp_utils_tests_main.c
  * @author Rafael Antoniello
  */
 
-#ifndef MPUTILS_TESTS_MP_LOG_TESTS_H_
-#define MPUTILS_TESTS_MP_LOG_TESTS_H_
+#include <stdlib.h>
+#include <stdio.h>
+#include <check.h>
+#include "mp_log_tests.h"
+#include "mp_time_tests.h"
+#include "mp_shm_fifo_tests.h"
 
-typedef struct Suite Suite;
+int main(void)
+{
+    int number_failed = 0, ret_code = EXIT_FAILURE;
+    Suite *suites[] = {
+            mp_log_suite(),
+            mp_time_suite(),
+            mp_shm_fifo_suite(),
+            NULL
+    };
 
-Suite *mp_log_suite();
+    for (int i = 0; suites[i] != NULL; i++) {
+        Suite *s = suites[i];
+        SRunner *sr = srunner_create(s);
+        srunner_run_all(sr, CK_NORMAL);
+        number_failed += srunner_ntests_failed(sr);
+        srunner_free(sr);
+    }
 
-#endif /* MPUTILS_TESTS_MP_LOG_TESTS_H_ */
+    if (number_failed == 0) {
+        printf("\nTESTS SUCCEED\n");
+        ret_code = EXIT_SUCCESS;
+    } else {
+        printf("\nTEST FAILED (%d failures)\n", number_failed);
+    }
+
+    return ret_code;
+}

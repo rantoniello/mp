@@ -18,15 +18,15 @@
  */
 
 /**
- * @file mp_log_tests.h
+ * @file mp_shm_fifo_tests.h
  * @author Rafael Antoniello
  */
 
-#ifndef MPUTILS_TESTS_MP_LOG_TESTS_H_
-#define MPUTILS_TESTS_MP_LOG_TESTS_H_
+#ifndef MPUTILS_TESTS_MP_SHM_FIFO_TESTS_H_
+#define MPUTILS_TESTS_MP_SHM_FIFO_TESTS_H_
 
 typedef struct Suite Suite;
 
-Suite *mp_log_suite();
+Suite *mp_shm_fifo_suite();
 
-#endif /* MPUTILS_TESTS_MP_LOG_TESTS_H_ */
+#endif /* MPUTILS_TESTS_MP_SHM_FIFO_TESTS_H_ */

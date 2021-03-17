@@ -17,6 +17,10 @@ LIBDIR = $(EXEC_PREFIX)/lib
 DATAROOTDIR = $(PREFIX)/share
 HTMLDIR = $(DATAROOTDIR)/$(PROGRAM_NAME)/html
 
+# Non conventional:
+# SRCDIRS: A list of SRCDIR's (in the same target we compile sources in 
+#          several locations)
+
 # Exports
 export PATH := $(BINDIR):$(PATH)
 
@@ -71,14 +75,40 @@ LIBUTILS_HDRFILES = $(wildcard $(PROJECT_DIR)/src/libs/mputils/*.h)
 
 libmputils: | .foldertree
 	@$(MAKE) mputils-generic-build-install --no-print-directory \
-SRCDIRS='$(LIBUTILS_SRCDIRS)' _BUILD_DIR='$(BUILD_DIR)/$@' TARGETFILE='$(BUILD_DIR)/$@/$@.so' \
-INCLUDEFILES='$(LIBUTILS_HDRFILES)' CFLAGS='$(LIBUTILS_CFLAGS)' CXXFLAGS='$(LIBUTILS_CXXFLAGS)' || exit 1
+SRCDIRS='$(LIBUTILS_SRCDIRS)' \
+_BUILD_DIR='$(BUILD_DIR)/$@' \
+TARGETFILE='$(BUILD_DIR)/$@/$@.so' \
+DESTFILE='$(LIBDIR)/$@.so' \
+INCLUDEFILES='$(LIBUTILS_HDRFILES)' \
+CFLAGS='$(LIBUTILS_CFLAGS)' \
+CXXFLAGS='$(LIBUTILS_CXXFLAGS)' || exit 1
 
 libmputils_tests: libmputils | .foldertree
 	@$(MAKE) mputils_tests-generic-build-install --no-print-directory \
-SRCDIRS='$(LIBUTILS_SRCDIRS)'/tests _BUILD_DIR='$(BUILD_DIR)/$@' TARGETFILE='$(BUILD_DIR)/$@/$@.bin' \
+SRCDIRS='$(LIBUTILS_SRCDIRS)/tests' \
+_BUILD_DIR='$(BUILD_DIR)/$@' \
+TARGETFILE='$(BUILD_DIR)/$@/$@.bin' \
+DESTFILE='$(BINDIR)/$@' \
+CFLAGS='$(CPPFLAGS)' \
+CXXFLAGS='$(CPPFLAGS) -std=c++11' \
+LDFLAGS+='-L$(LIBDIR)' \
+LDLIBS+='-lpthread -lssl -lcrypto -ljson-c -lmputils -lcheck -lrt' || exit 1
+
+#libmputils_tests_apps: libmputils | .foldertree #FIXME!!
+	$(eval _BUILD_DIR := $(BUILD_DIR)/$@) # FIX: necessary for 'cobjs' just below
+	$(eval cobjs := $(foreach dir,$(LIBUTILS_SRCDIRS)/tests/apps,$(get_cfiles_objs)))
+	@for obj in $(cobjs); do \
+echo "$$obj"; \
+TARGETNAME=$$(basename -s .o "$$obj"); \
+echo "XXXXXXXXXXXXXXXXXX $$TARGETNAME"; \
+$(MAKE) mputils_tests_$$TARGETNAME-generic-build-install --no-print-directory \
+cobjs=$$obj \
+_BUILD_DIR='$(BUILD_DIR)/$@' \
+TARGETFILE=$(BUILD_DIR)/$@/$@_$$(basename -s .o $$obj).bin \
+DESTFILE=$(BINDIR)/$@_$$(basename -s .o $$obj) \
 CXXFLAGS='$(CPPFLAGS) -std=c++11' CFLAGS='$(CPPFLAGS)' \
-LDFLAGS+='-L$(LIBDIR)' LDLIBS+='-lpthread -lssl -lcrypto -ljson-c -lmputils -lcheck' || exit 1
+LDFLAGS+='-L$(LIBDIR)' LDLIBS+='-lpthread -lssl -lcrypto -ljson-c -lmputils -lcheck -lrt'; \
+done
 
 ##############################################################################
 # Rule for 'OpenSSL' library and apps.
@@ -173,16 +203,15 @@ check: | .foldertree
 # take the value 'mylibname'.
 
 %-generic-build-install: %-generic-build-source-compile
-	@if [ -f $(_BUILD_DIR)/*.so ] ; then\
-		cp -f $(_BUILD_DIR)/*.so $(LIBDIR)/;\
-	fi
+	@echo Installing target "$(TARGETFILE)" to "$(DESTFILE)";
+	@echo ====================================2
 	@if [ ! -z "$(INCLUDEFILES)" ] ; then\
 		mkdir -p $(INCLUDEDIR)/$*;\
 		cp -f $(INCLUDEFILES) $(INCLUDEDIR)/$*/;\
 	fi
-	@if [ -f $(_BUILD_DIR)/*.bin ] ; then\
-		cp -f $(_BUILD_DIR)/*.bin $(BINDIR)/$*;\
-	fi
+	@echo ====================================3
+	cp -f $(TARGETFILE) $(DESTFILE) || exit 1
+	@echo ====================================4
 
 find_cfiles = $(wildcard $(shell realpath --relative-to=$(PROJECT_DIR) $(dir)/*.c))
 find_cppfiles = $(wildcard $(shell realpath --relative-to=$(PROJECT_DIR) $(dir)/*.cpp))
@@ -190,16 +219,16 @@ get_cfiles_objs = $(patsubst %.c,$(_BUILD_DIR)/%.o,$(find_cfiles))
 get_cppfiles_objs = $(patsubst %.cpp,$(_BUILD_DIR)/%.oo,$(find_cppfiles))
 
 %-generic-build-source-compile:
-	@mkdir -p "$(_BUILD_DIR)"
 	@echo "Building target '$*' from sources... (make $@)"
 	@echo "Target file $(TARGETFILE)";
 	@echo "Source directories: $(SRCDIRS)";
+	@mkdir -p "$(_BUILD_DIR)"
 	$(eval cobjs := $(foreach dir,$(SRCDIRS),$(get_cfiles_objs)))
 	$(eval cppobjs := $(foreach dir,$(SRCDIRS),$(get_cppfiles_objs)))
 	$(MAKE) $(TARGETFILE) objs="$(cobjs) $(cppobjs)" --no-print-directory;
 	@echo Finished building target '$*'
 
-$(_BUILD_DIR)/%.so $(_BUILD_DIR)/%.bin: $(objs)
+$(TARGETFILE): $(objs)
 	$(CPP) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
 .PRECIOUS: $(_BUILD_DIR)%/.

@@ -22,10 +22,10 @@
  * @author Rafael Antoniello
  */
 
-#include <stdlib.h>
-
 #ifndef MPUTILS_MP_MEM_H_
 #define MPUTILS_MP_MEM_H_
+
+#include <stdlib.h>
 
 #define mp_malloc malloc
 
